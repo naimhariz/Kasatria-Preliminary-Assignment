@@ -1,0 +1,40 @@
+html, body { margin: 0; height: 100%; background: #000; font-family: Arial, Helvetica, sans-serif; color: #fff; overflow: hidden; }
+
+/* ---------- Login (Image A) ---------- */
+#login { position: fixed; inset: 0; background: #f4f5f7; display: flex; align-items: center; justify-content: center; z-index: 10; }
+#login .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 6px; padding: 56px 72px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.05); max-width: 90vw; }
+#login h1 { margin: 0 0 14px; font-weight: 400; font-size: 22px; color: #333; }
+#login p { margin: 0 0 28px; font-size: 12px; color: #555; }
+.gbtn { display: inline-flex; align-items: center; gap: 12px; background: #4285f4; color: #fff; border: 0; border-radius: 6px; padding: 8px 18px 8px 8px; font-size: 14px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.gbtn:hover { background: #3b78db; }
+.gbtn .g { background: #fff; width: 34px; height: 34px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+#login small { display: block; margin-top: 22px; color: #888; }
+#login a { color: #1a73e8; cursor: pointer; text-decoration: underline; }
+#msg { margin-top: 16px; color: #c5221f; font-size: 12px; min-height: 14px; }
+
+/* ---------- 3D view ---------- */
+#container { position: absolute; inset: 0; }
+#menu { position: absolute; bottom: 20px; width: 100%; text-align: center; z-index: 5; }
+#menu button { color: rgba(127,255,255,.75); background: transparent; border: 1px solid rgba(127,255,255,.75); padding: 6px 12px; margin: 0 2px; cursor: pointer; font-size: 12px; }
+#menu button:hover { background: rgba(0,255,255,.5); color: #fff; }
+#menu button.active { background: rgba(0,255,255,.35); color: #fff; }
+#user { position: absolute; top: 12px; right: 16px; font-size: 12px; color: rgba(127,255,255,.75); z-index: 5; }
+
+/* ---------- tile ---------- */
+.element { width: 120px; height: 160px; box-sizing: border-box; border: 1px solid; cursor: default; padding: 6px 8px; text-align: center; position: relative; }
+.element .country { position: absolute; top: 6px; left: 8px; font-size: 11px; }
+.element .age { position: absolute; top: 6px; right: 8px; font-size: 11px; }
+.element .photo { position: absolute; left: 50%; top: 28px; width: 80px; height: 80px; margin-left: -40px; background: #222; border-radius: 2px; overflow: hidden; }
+.element .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+.element .photo span { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; color: #fff; }
+.element .photo.noimg span { display: flex; }
+.element .name { position: absolute; left: 4px; right: 4px; top: 116px; font-size: 12px; font-weight: bold; color: #fff; line-height: 1.15; }
+.element .interest { position: absolute; left: 4px; right: 4px; top: 142px; font-size: 10px; color: rgba(255,255,255,.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.red   { background: rgba(239,48,34,.22);  border-color: rgba(239,48,34,.85);  box-shadow: 0 0 12px rgba(239,48,34,.5); }
+.orange{ background: rgba(253,202,53,.20); border-color: rgba(253,202,53,.85); box-shadow: 0 0 12px rgba(253,202,53,.5); }
+.green { background: rgba(58,159,72,.25);  border-color: rgba(58,159,72,.9);   box-shadow: 0 0 12px rgba(58,159,72,.5); }
+.red .country, .red .age { color: #ff8a80; } .orange .country, .orange .age { color: #ffe082; } .green .country, .green .age { color: #a5d6a7; }
+
+/* ---------- legend (net worth scale) ---------- */
+#legend { display: inline-flex; align-items: center; gap: 10px; margin-left: 40px; padding: 5px 12px; border: 1px solid rgba(127,255,255,.75); color: #fff; font-size: 13px; vertical-align: middle; }
+#legend .bar { width: 160px; height: 10px; border-radius: 2px; background: linear-gradient(to right, #ef3022, #f7931e 35%, #fdca35 50%, #8cbd3f 75%, #3a9f48); }
