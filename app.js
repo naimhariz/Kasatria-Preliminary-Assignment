@@ -3,7 +3,7 @@ import TWEEN from 'three/addons/libs/tween.module.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
-/* =================== CONFIG =================== */
+/* =================== CONFIG — fill these in =================== */
 const CONFIG = {
   CLIENT_ID: '958979983394-ejrcpvpf7n081ed38l6n5pqmplttpnnq.apps.googleusercontent.com', // Google Cloud > APIs & Services > Credentials > OAuth client (Web)
   SHEET_ID:  '1iEhGkXuguC0WD7at7CPSLwrcd7pi60xvZjZO-J0iSXc',                                   // the long id in the Sheet's URL
@@ -15,13 +15,14 @@ const configured = !CONFIG.CLIENT_ID.startsWith('YOUR_') && !CONFIG.SHEET_ID.sta
 const $ = id => document.getElementById(id);
 
 /* ---------- Google login + Sheets fetch ---------- */
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email';
 let tokenClient;
 $('signin').onclick = () => {
   if (!configured) { $('msg').textContent = 'Set CLIENT_ID and SHEET_ID in the CONFIG block first.'; return; }
   if (!window.google || !google.accounts) { $('msg').textContent = 'Google script still loading, try again.'; return; }
   tokenClient ||= google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email',
+    scope: SCOPES,
     callback: onToken,
   });
   tokenClient.requestAccessToken({ prompt: 'select_account' });
@@ -36,16 +37,24 @@ async function onToken(resp) {
   if (resp.error) { $('msg').textContent = 'Login failed: ' + resp.error; return; }
   try {
     const h = { Authorization: 'Bearer ' + resp.access_token };
+    if (!google.accounts.oauth2.hasGrantedAllScopes(resp, ...SCOPES.split(' '))) {
+      // Sheets permission was unticked on the consent screen: try the link-shared Sheet instead
+      try { start(await loadPublicSheet()); return; }
+      catch { throw new Error('Please sign in again and tick the checkbox allowing access to Google Sheets (or ask the owner to set the Sheet to "Anyone with the link can view").'); }
+    }
     fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: h }).then(r => r.json()).then(u => $('user').textContent = u.email || '').catch(() => {});
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent("'" + CONFIG.TAB.replace(/'/g, "''") + "'")}`;
     const r = await fetch(url, { headers: h });
-    if (!r.ok) throw new Error((await r.json()).error?.message || r.status);
+    if (!r.ok) {
+      try { start(await loadPublicSheet()); return; } catch {}
+      throw new Error((await r.json()).error?.message || r.status);
+    }
     const { values } = await r.json();
     start(rowsToPeople(values));
   } catch (e) { $('msg').textContent = 'Could not load sheet: ' + e.message; }
 }
 
-/* ---------- Data mapping ---------- */
+/* ---------- Data mapping (matches headers loosely, so column order doesn't matter) ---------- */
 function rowsToPeople(values) {
   const head = values[0].map(h => String(h).toLowerCase().trim());
   const find = (...keys) => head.findIndex(h => keys.some(k => h.includes(k)));
