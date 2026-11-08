@@ -3,7 +3,7 @@ import TWEEN from 'three/addons/libs/tween.module.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
-/* =================== CONFIG — fill these in =================== */
+/* =================== CONFIG =================== */
 const CONFIG = {
   CLIENT_ID: '958979983394-ejrcpvpf7n081ed38l6n5pqmplttpnnq.apps.googleusercontent.com', // Google Cloud > APIs & Services > Credentials > OAuth client (Web)
   SHEET_ID:  '1iEhGkXuguC0WD7at7CPSLwrcd7pi60xvZjZO-J0iSXc',                                   // the long id in the Sheet's URL
@@ -45,7 +45,7 @@ async function onToken(resp) {
   } catch (e) { $('msg').textContent = 'Could not load sheet: ' + e.message; }
 }
 
-/* ---------- Data mapping (matches headers loosely, so column order doesn't matter) ---------- */
+/* ---------- Data mapping ---------- */
 function rowsToPeople(values) {
   const head = values[0].map(h => String(h).toLowerCase().trim());
   const find = (...keys) => head.findIndex(h => keys.some(k => h.includes(k)));
