@@ -88,9 +88,57 @@ function parseCSV(text) {
   return rows;
 }
 
+/* ---------- Pyramid (tetrahedron) layout ----------
+   4 triangular faces. On each face the tiles sit in centred rows that grow towards the base
+   (1, 3, 5, 7 ... tiles), like a stepped pyramid. Tiles lie flat on the face and face outward. */
+function buildTetrahedron(N, THREE) {
+  const TILE_W = 120, TILE_H = 160, PITCH_X = 130, PITCH_Y = 225, EDGE = 25;
+  const T30 = Math.tan(Math.PI / 6);
+  const per = [0, 1, 2, 3].map(f => Math.floor(N / 4) + (f < N % 4 ? 1 : 0));
+  const faces = per.map(n => {                                // rows per face: 1,3,5,... plus any remainder in the bottom row
+    const k = Math.max(1, Math.floor(Math.sqrt(n)));
+    const rows = Array.from({ length: k }, (_, i) => 1 + 2 * i);
+    rows[k - 1] += n - k * k;
+    return rows;
+  });
+
+  // One edge length that fits every face: depth of the first row below the apex, then rows, then the base
+  let depthNeeded = 0, D0 = 0;
+  faces.forEach(rows => {
+    const d0 = Math.max(...rows.map((c, i) => (((c - 1) * PITCH_X) / 2 + TILE_W / 2 + EDGE) / T30 - i * PITCH_Y));
+    D0 = Math.max(D0, d0);
+    depthNeeded = Math.max(depthNeeded, d0 + (rows.length - 1) * PITCH_Y + TILE_H + EDGE);
+  });
+  const L = (2 * depthNeeded) / Math.sqrt(3), R = (L * Math.sqrt(6)) / 4, rb = (R * Math.sqrt(8)) / 3;
+
+  const V = [new THREE.Vector3(0, R, 0)];                     // apex on top, triangular base below
+  for (let k = 0; k < 3; k++) { const a = (k * 2 * Math.PI) / 3; V.push(new THREE.Vector3(rb * Math.cos(a), -R / 3, rb * Math.sin(a))); }
+
+  const out = [];
+  for (let f = 0; f < 4; f++) {
+    const fv = V.filter((_, i) => i !== f);                   // face opposite vertex f
+    const c = new THREE.Vector3().add(fv[0]).add(fv[1]).add(fv[2]).divideScalar(3);
+    const n = c.clone().normalize();                          // outward normal (the solid is centred on the origin)
+    const w = V[f === 0 ? 1 : 0].clone().sub(c).normalize();  // "up" on the face: towards the apex (any corner for the base)
+    const u = w.clone().cross(n);                             // u × w = n
+    const m = new THREE.Matrix4().makeBasis(u, w, n);
+    const apexY = L / Math.sqrt(3);
+    faces[f].forEach((count, i) => {
+      const y = apexY - D0 - TILE_H / 2 - i * PITCH_Y;
+      for (let j = 0; j < count; j++) {
+        const o = new THREE.Object3D();
+        o.position.copy(c).addScaledVector(u, (j - (count - 1) / 2) * PITCH_X).addScaledVector(w, y);
+        o.quaternion.setFromRotationMatrix(m);
+        out.push(o);
+      }
+    });
+  }
+  return out;
+}
+
 /* ---------- 3D scene ---------- */
 let camera, scene, renderer, controls;
-const objects = [], targets = { table: [], sphere: [], helix: [], grid: [] };
+const objects = [], targets = { table: [], sphere: [], helix: [], grid: [], pyramid: [] };
 
 function start(people) {
   $('login').style.display = 'none';
@@ -155,6 +203,9 @@ function init(people) {
     targets.grid.push(o);
   }
 
+  // PYRAMID — 4-face tetrahedron
+  buildTetrahedron(N, THREE).forEach(o => targets.pyramid.push(o));
+
   renderer = new CSS3DRenderer();
   renderer.setSize(innerWidth, innerHeight);
   $('container').appendChild(renderer.domElement);
@@ -163,7 +214,7 @@ function init(people) {
   controls.minDistance = 500; controls.maxDistance = 7000;
   controls.addEventListener('change', render);
 
-  for (const k of ['table', 'sphere', 'helix', 'grid']) {
+  for (const k of ['table', 'sphere', 'helix', 'grid', 'pyramid']) {
     $(k).onclick = () => { transform(targets[k], 2000); setActive(k); };
   }
   addEventListener('resize', () => {
@@ -174,8 +225,12 @@ function init(people) {
 
 function setActive(k) { for (const b of document.querySelectorAll('#menu button')) b.classList.toggle('active', b.id === k); }
 
+// Default pyramid view (like the reference picture): apex up, an edge facing the camera, seen slightly from above
+const PYRAMID_VIEW = { x: 0.3, y: -75 * Math.PI / 180 };
 function transform(list, duration) {
   TWEEN.removeAll();
+  const full = 2 * Math.PI, to = list === targets.pyramid ? PYRAMID_VIEW : { x: 0, y: Math.round(scene.rotation.y / full) * full };
+  new TWEEN.Tween(scene.rotation).to(to, duration).easing(TWEEN.Easing.Exponential.InOut).start();   // turn the pyramid into view / back
   objects.forEach((obj, i) => {
     const t = list[i];
     new TWEEN.Tween(obj.position).to({ x: t.position.x, y: t.position.y, z: t.position.z }, Math.random() * duration + duration).easing(TWEEN.Easing.Exponential.InOut).start();
